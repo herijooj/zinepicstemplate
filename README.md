@@ -1,82 +1,97 @@
-# a photo zine
+# roots e amigos — a one-sheet mini zine
 
-A small LaTeX template for a zine of friends: one photo per page, a name, a
-few lines about the moment. Everything is drawn to feel slightly hand-made —
-taped-in prints at a crooked angle, wobbly pencil rules, handwriting, a page
-number in a circle.
+One A4 landscape sheet (297 × 210 mm), printed single-sided in full color,
+folds into 8 A7 portrait panels (74.25 × 105 mm) with the classic center-slit
+fold. Polaroids, hand-drawn stickers, Permanent Marker title. No captions.
 
-The design is deliberately plain. It is meant to be edited.
-
-## Build
+## Quick start
 
 ```sh
-direnv allow      # or: nix-shell
-make              # main.pdf
-make preview      # main.pdf -> preview/page-01.png ... to look at it
-make booklet      # booklet.pdf, imposed 2-up on A4, ready to fold
+nix-shell          # or: direnv allow
+./build.sh         # check layout -> main.tex -> zine_pages.pdf + sheet + guide
+make preview       # PNG renders of the 8 pages, for a visual check
 ```
 
-Only `xelatex` is needed (the `shell.nix` provides it). Compiling twice is
-required because the index uses page references; `make` already does that.
+Print `zine_print_sheet.pdf` single-sided, cut the center slit (see
+`fold_guide.pdf`), fold into 8 panels. Bottom row L-R: pages 6,7,8,1
+(1 = cover). Top row L-R: pages 5,4,3,2, rotated 180°.
 
-## Put your photos in `photos/`
+## Picking what picture goes where
 
-The frame is portrait, aspect 1 : 1.28. Photos are scaled to *cover* the frame
-and cropped, so keep the face near the middle. Anything the printer can read
-works: jpg, png, heic-converted, whatever.
+Placement lives in **`layout.tsv`** (the single source of truth):
 
-If a file is missing the page still compiles and shows a grey box with the
-filename, so you can build the whole zine and fill in photos later.
-
-## Add a page
-
-```latex
-\moment[date=august, label=m:ana]
-  {photos/ana.jpg}
-  {Ana}
-  {We missed the last bus and walked home along the river.}
+```
+page <TAB> slot <TAB> photo <TAB> rotate
+1    anchor  photos/cover-pick.jpg   0.0
+2    pola1   photos/some-memory.jpg  11.5
 ```
 
-- `date=` a little rubber stamp in the corner (omit it and nothing is drawn)
-- `angle=` degrees of tilt for the print, default `-1.2`
-- `width=` how wide the print is, as a fraction of the text width, default `0.75`
-- `label=` so the index can point at it with `\pageref{m:ana}`
+- `slot`: `anchor` (full-bleed, one per page) or `pola1`…`pola7`
+  (fixed polaroid grid, inner pages 2–7 only).
+- 8 anchors + 42 polaroids = 50 photos, each exactly once.
+- `rotate` is free for anchors too, but keep anchors at `0.0`
+  (full-bleed stays aligned).
 
-One `\moment` is one page; it starts its own page, so no `\newpage` needed.
+Commands (`./layout.sh …`):
 
-Keep captions to two or three lines. If a page spills onto a second page, the
-photo was too big for the caption: lower `width` (e.g. `0.68`).
+| command    | what it does |
+|------------|--------------|
+| `sync`     | scan `photos/` → `pool.tsv` (the photo lock file). Run after adding/removing photos. Videos and non-jpg files are ignored (reported, never touched). |
+| `init [--force]` | deterministic auto-spread of the pool → `layout.tsv` (the classic layout). Refuses to overwrite your edits without `--force`. |
+| `check`    | validate `layout.tsv`: slots complete, no duplicates, files exist, photos known to `pool.tsv`. Runs automatically in `build.sh`. |
+| `contact`  | build `contact.pdf` + `contact.html`: every pool photo as a thumbnail with its index, filename (**click to copy** in the HTML) and current slot in blue. The visual picking aid — browse, copy filenames, paste into `layout.tsv`. |
+| `dupes`    | report byte-identical duplicate photos (read-only, deletes nothing). |
 
-## Page count
+Typical session: `./layout.sh sync` → `./layout.sh contact` → open
+`contact.html`, pick photos, edit `layout.tsv` → `./layout.sh check` →
+`./build.sh` → `make preview` → look, adjust, repeat.
 
-The zine is A5, made by folding A4 sheets in half, so the page count must be a
-multiple of four: 12 pages here (cover + note + 8 moments + index + back
-cover). Add or remove moments in pairs of four to keep it that way.
+## Reproducibility
 
-## Printing
+- `photos/` (469 MB, 417 jpgs) is **not in git** (see `.gitignore`).
+  What *is* committed: `pool.tsv` (filename + dimensions lock file),
+  `layout.tsv` (placement), and all generators/styles.
+- `tex` generation is fully deterministic — no randomness:
+  rotations are written out explicitly in `layout.tsv`.
+- Proof: `layout.sh init` from the pool regenerates the shipped
+  `layout.tsv`, and `gen_main.sh` from that regenerates `main.tex`
+  byte-identically (verified with `diff`).
+- Changing the photo set changes the pool: re-run `sync`, then `init`
+  (or hand-edit `layout.tsv`), and `check` will tell you what moved.
 
-`make booklet` arranges the pages so the fold works out. Print `booklet.pdf`
-double-sided, **flip on the short edge**, then fold the stack in half and
-staple twice along the fold. If your printer has a "booklet" mode you can skip
-`booklet.pdf` and print `main.pdf` with that instead.
+## Files
 
-## What lives where
+| file | role |
+|------|------|
+| `layout.tsv` | **edit me**: photo placement (committed) |
+| `pool.tsv` | photo lock file from `sync` (committed) |
+| `layout.sh` | picker toolkit (`sync/init/check/contact/dupes`) |
+| `gen_main.awk` | `layout.tsv`+`pool.tsv` → `main.tex` (modes `init`/`tex`) |
+| `gen_main.sh` | wrapper regenerating `main.tex` |
+| `gen_parse.awk` | exiftool output → TSV rows |
+| `zine.sty` | A7 page geometry, polaroid/anchor/cover-title macros, palette |
+| `stickers.tex` | reusable hand-drawn sticker macros (generic + nostalgia) |
+| `make_sheet.tex` | A4 landscape imposition (no fold lines in the print file) |
+| `make_guide.tex` | fold lines + center slit, separate guide PDF |
+| `build.sh` | full build: check → pages → sheet → guide → verify |
+| `verify.sh` | structural verification (geometry, imposition, photo usage) |
+| `shell.nix` | nix tools (xelatex, poppler, exiftool) |
+| `photos/` | your photos (not in git, never modified by scripts) |
 
-| file | what it does |
-| --- | --- |
-| `main.tex` | the content: cover, note, moments, index, back cover |
-| `zine.sty` | the look: page size, fonts, tape, wobbly lines, `\moment` |
-| `booklet.tex` | imposition for printing |
-| `fonts/` | Kalam and Patrick Hand (SIL Open Font License) |
-| `shell.nix`, `.envrc` | the toolchain |
+Generated (rebuilt anytime, not in git): `main.tex`, `zine_pages.pdf`,
+`zine_print_sheet.pdf`, `fold_guide.pdf`, `contact.pdf`, `contact.html`,
+`preview/`, `*.aux`, `*.log`.
 
-Useful pieces if you want to build a page by hand instead of with `\moment`:
-`\tapedphoto[angle]{file}{width}`, `\handline[length][thickness]`,
-`\zinestamp{text}`, `\zinename{name}`, `\zinestar[size]`, `\zineentry{name}{page}`.
+## Design constraints (kept by the tooling)
 
-## Things worth trying next
-
-- two photos on a page, or a full-bleed page with no frame at all
-- a halftone/dithered version of every photo, so it looks photocopied
-- coloured paper for the cover sheet only
-- a real scribble instead of `\zinestar` (a scanned pen drawing, as a pdf/png)
+- Palette only: paper `#FFF8E7`, red `#E63027`, cobalt `#2547D0`,
+  yellow `#FFD21F`, green `#1FA35B`, ink `#151515`, plus white frames.
+- Content ≥ 5 mm from sheet edges; faces off fold lines (±3 mm).
+- Max 2 of the same sticker per page (layouts use at most 1).
+- TikZ wobble via `decorations.pathmorphing` (`random steps`): straight
+  segments only — decorated circles/arcs/short curves overflow PGF's
+  `random steps` automaton on some rotations, so circles/ellipses and
+  sub-10 mm curves are plain ink with offset fills instead (same look).
+  All `dim*scalar` coordinates are written `scalar*dim` (pgfmath only
+  supports the latter order); node geometry is precomputed into
+  registers (two maths in one node overflow pgfmath).

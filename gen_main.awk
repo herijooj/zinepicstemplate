@@ -1,32 +1,66 @@
 # gen_main.awk -- generates main.tex: the 8-page A7 fold-out zine.
 #
-# Input: sorted photo table TSV: file \t width \t height \t orientation
-#   (all photos in the pool are stored upright: orientation 1 or "Unknown (0)")
+# Two modes (layout.tsv is the single source of truth for placement):
+#   init:  awk -v mode=init -f gen_main.awk pool.tsv > layout.tsv
+#          deterministic auto-spread (LCG seed 20260120) -> placement table.
+#   tex:   awk -v mode=tex  -f gen_main.awk pool.tsv layout.tsv > main.tex
+#          layout table -> main.tex (no randomness here at all).
 #
-# Selection (deterministic, LCG seed 20260120):
-#   - 8 anchors, spread through the pool: anchor[0] = page 1 (cover),
-#     anchor[1..6] = pages 2..7, anchor[7] = page 8 (back cover).
-#   - 42 polaroid candidates, spread through the pool minus the anchors:
-#     7 per inner page (pages 2..7) -- "6-8 polaroids per inner page".
-#   - Polaroid frames: 28 x 35 mm (photo 24 x 26, ~4:5-ish), lower-left
-#     coords, two columns (x = 5 / 41) x three rows (y ~ 64/39/14,
-#     staggered 2 mm) + 1 centre bridge (23,48). Row spacing 25 mm on a
-#     35 mm tall frame = ~29% overlap; columns leave an 8 mm gutter so
-#     only corners touch after +-12 deg rotation.
+# pool.tsv input: sorted photo table: file \t width \t height
+#   (from `layout.sh sync`: exiftool scan of photos/, LC_ALL=C sorted).
+# layout.tsv input: page \t slot \t photo \t rotate
+#   slot = anchor (full-bleed, pages 1..8) or pola1..pola7 (inner pages 2..7).
+#
+# Geometry (polaroid frames 28 x 35 mm, photo 24 x 26):
+#   pola1..pola7 lower-left coords, two columns (x = 5 / 41) x three rows
+#   (y ~ 64/39/14, staggered 2 mm) + 1 centre bridge (23,48).
+#   Row spacing 25 mm on a 35 mm tall frame = ~29% overlap; columns leave
+#   an 8 mm gutter so only corners touch after +-12 deg rotation.
 #   - Cover-fit: awk knows EXIF w/h, so it picks width= (portrait: fill
 #     width, crop top/bottom) or height= (landscape: fill height, crop
 #     sides). No distortion, no measuring in TeX.
-#   - Stickers: 3-6 per page, varied, seeded.
+#   - Stickers: 5 per page, varied per page, hand-placed (see emitStickers).
 
 BEGIN {
   seed = 20260120
   n = 0
+  if (mode == "") mode = "tex"
+  # fixed polaroid grid: slot -> lower-left corner (mm)
+  gx["pola1"] = 5;  gy["pola1"] = 64
+  gx["pola2"] = 41; gy["pola2"] = 62
+  gx["pola3"] = 5;  gy["pola3"] = 39
+  gx["pola4"] = 41; gy["pola4"] = 37
+  gx["pola5"] = 5;  gy["pola5"] = 14
+  gx["pola6"] = 41; gy["pola6"] = 12
+  gx["pola7"] = 23; gy["pola7"] = 48
 }
-{ photo[++n] = "photos/" $1; pw[n] = $2 + 0; ph[n] = $3 + 0; }
+
+# ---- first input file is always the pool
+FNR == NR {
+  photo[++n] = "photos/" $1; pw[n] = $2 + 0; ph[n] = $3 + 0
+  wby[photo[n]] = pw[n]; hby[photo[n]] = ph[n]
+  next
+}
+
+# ---- second input file (tex mode only) is the layout table
+mode == "tex" && $1 ~ /^[0-9]+$/ {
+  L++
+  lpage[L] = $1 + 0; lslot[L] = $2; lphoto[L] = $3; lrot[L] = $4 + 0
+}
 
 function rnd() {
   seed = (seed * 1103515245 + 12345) % 2147483648
   return int(seed / 65536) / 32768.0
+}
+
+function coverfit_anchor(f,   r) {  # full-bleed on 74.25 x 105 panel
+  r = wby[f] / hby[f]
+  return (r > 0.7071) ? "height=105mm" : "width=74.25mm"
+}
+
+function coverfit_pola(f,   r) {  # photo rect 24 x 26 (~4:5)
+  r = wby[f] / hby[f]
+  return (r > 0.9231) ? "height=26mm" : "width=24mm"
 }
 
 # ---- stickers (clamped into each page's safe zone)
@@ -65,7 +99,7 @@ function emitSticker(kind, x, y, a, b, rot, page,   rx, ry, sx, sy, hiY) {
 }
 
 function emitStickers(page) {
-  # NOTE: photo layout above is untouched; only stickers vary per page.
+  # NOTE: photo layout comes from layout.tsv; only stickers vary per page.
   # Each page gets 5 distinct stickers (max 1 of each kind per page),
   # mixed generic + nostalgic + washi colours, some on photo corners.
   if (page == 1) {  # cover: keep title zone (y~65-100) clear, decorate below
@@ -127,42 +161,65 @@ function emitStickers(page) {
 }
 
 END {
-  # ---- anchors: 8 spread picks (pages 1..8), no rotation (full-bleed stays aligned)
-  # page 8 (back cover) is pinned to the big group portrait, like the front
-  for (k = 0; k < 8; k++) {
-    if (k == 7) {
-      for (ai = 1; ai <= n; ai++) if (photo[ai] == "photos/PICT0271.jpg") break
-      if (ai > n) ai = n
-    } else ai = int(k * (n - 1) / 7) + 1
-    anchor[k] = photo[ai]
-    anchorOpt[k] = (pw[ai] / ph[ai] > 0.7071) ? "height=105mm" : "width=74.25mm"
-    anchorRot[k] = 0
+  if (mode == "init") {
+    # ---- anchors: 8 spread picks (pages 1..8), no rotation
+    # page 8 (back cover) is pinned to the big group portrait, like the front
+    for (k = 0; k < 8; k++) {
+      if (k == 7) {
+        for (ai = 1; ai <= n; ai++) if (photo[ai] == "photos/PICT0271.jpg") break
+        if (ai > n) ai = n
+      } else ai = int(k * (n - 1) / 7) + 1
+      anchor[k] = photo[ai]
+    }
+    # ---- polaroids: 42 spread picks from non-anchor photos
+    nA = 0
+    for (i = 1; i <= n; i++) {
+      ok = 1
+      for (k = 0; k < 8; k++)
+        if (photo[i] == anchor[k]) ok = 0
+      if (ok) nonanchor[++nA] = photo[i]
+    }
+    for (j = 0; j < 42; j++) {
+      pi = int(j * nA / 42) + 1
+      pol[j] = nonanchor[pi]
+      polpage[j] = 2 + (j % 6)            # 7 polaroids per inner page
+      i = j % 7
+      if (i == 0) slot[j] = "pola1"
+      else if (i == 1) slot[j] = "pola2"
+      else if (i == 2) slot[j] = "pola3"
+      else if (i == 3) slot[j] = "pola4"
+      else if (i == 4) slot[j] = "pola5"
+      else if (i == 5) slot[j] = "pola6"
+      else             slot[j] = "pola7"
+      pangle[j] = rnd() * 24 - 12         # random rotation within +-12 degrees
+    }
+    # ---- emit layout.tsv (explicit placement; rotate written out)
+    print "# layout.tsv -- zine photo placement. Columns: page <TAB> slot <TAB> photo <TAB> rotate(deg)."
+    print "# Edit freely (swap photos, tweak rotates), then run ./build.sh."
+    print "# Slots: anchor (full-bleed, one per page) or pola1..pola7 (inner pages 2..7 only)."
+    print "# Validate with ./layout.sh check. Regenerate with ./layout.sh init --force."
+    for (k = 0; k < 8; k++)
+      printf "%d\tanchor\t%s\t0.0\n", k + 1, anchor[k]
+    for (j = 0; j < 42; j++)
+      printf "%d\t%s\t%s\t%.1f\n", polpage[j], slot[j], pol[j], pangle[j]
+    exit
   }
 
-  # ---- polaroids: 42 spread picks from non-anchor photos
-  nA = 0
-  for (i = 1; i <= n; i++) {
-    ok = 1
-    for (k = 0; k < 8; k++)
-      if (photo[i] == anchor[k]) ok = 0
-    if (ok) nonanchor[++nA] = photo[i]
-  }
-  for (j = 0; j < 42; j++) {
-    pi = int(j * nA / 42) + 1
-    # map back to pool index for w/h: find photo[] == nonanchor pick
-    pol[j] = nonanchor[pi]
-    for (ii = 1; ii <= n; ii++) if (photo[ii] == pol[j]) { pwi = pw[ii]; phi = ph[ii] }
-    polOpt[j] = (pwi / phi > 0.9231) ? "height=26mm" : "width=24mm"
-    polpage[j] = 2 + (j % 6)            # 7 polaroids per inner page
-    i = j % 7
-    if (i == 0) { cx[j] = 5;  cy[j] = 64 }
-    else if (i == 1) { cx[j] = 41; cy[j] = 62 }
-    else if (i == 2) { cx[j] = 5;  cy[j] = 39 }
-    else if (i == 3) { cx[j] = 41; cy[j] = 37 }
-    else if (i == 4) { cx[j] = 5;  cy[j] = 14 }
-    else if (i == 5) { cx[j] = 41; cy[j] = 12 }
-    else             { cx[j] = 23; cy[j] = 48 }
-    pangle[j] = rnd() * 24 - 12         # random rotation within +-12 degrees
+  # ---- tex mode: placement comes verbatim from layout.tsv
+  npol = 0
+  for (r = 1; r <= L; r++) {
+    if (lslot[r] == "anchor") {
+      anchor[lpage[r]-1] = lphoto[r]
+      anchorRot[lpage[r]-1] = lrot[r]
+      anchorOpt[lpage[r]-1] = coverfit_anchor(lphoto[r])
+    } else {
+      npol++
+      pol[npol] = lphoto[r]
+      polpage[npol] = lpage[r]
+      cx[npol] = gx[lslot[r]]; cy[npol] = gy[lslot[r]]
+      pangle[npol] = lrot[r]
+      polOpt[npol] = coverfit_pola(lphoto[r])
+    }
   }
 
   # ---- emit main.tex
@@ -191,7 +248,7 @@ END {
     print "\\begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]"
     print "  \\zinedoodle"
     printf "  \\zineanchor{%s}{%.1f}{%s}\n", anchor[p-1], anchorRot[p-1], anchorOpt[p-1]
-    for (j = 0; j < 42; j++)
+    for (j = 1; j <= npol; j++)
       if (polpage[j] == p)
         printf "  \\zinepolaroid{%s}{%d}{%d}{%.1f}{%s}\n", pol[j], cx[j], cy[j], pangle[j], polOpt[j]
     emitStickers(p)

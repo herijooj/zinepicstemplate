@@ -14,6 +14,9 @@ fi
 
 LATEX="xelatex -interaction=nonstopmode -halt-on-error"
 
+echo "== zine: checking layout"
+./layout.sh check
+
 echo "== zine: generating main.tex"
 ./gen_main.sh
 

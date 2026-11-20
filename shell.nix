@@ -3,11 +3,12 @@
 
 pkgs.mkShell {
   packages = with pkgs; [
-    texliveSmall    # xelatex, tikz, fontspec, fancyhdr, geometry, pdfpages
+    texliveSmall    # xelatex, tikz, fontspec, pdfpages for the zine
     poppler-utils   # pdftoppm / pdfinfo, for previewing and checking pages
+    exiftool        # pool scan (photo dimensions) for layout.sh sync
   ];
 
   shellHook = ''
-    echo "zine: xelatex + tikz ready -- run 'make' (or 'make preview')"
+    echo "zine: xelatex + tikz ready -- run './build.sh' (or 'make')"
   '';
 }
