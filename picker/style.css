@@ -35,6 +35,12 @@ main{display:grid;grid-template-columns:minmax(300px,1.1fr) minmax(420px,2fr);ga
 .page h3 .cover{color:var(--red)}
 .mini{position:relative;width:100%;aspect-ratio:74.25/105;background:#00000010;border:1px solid #0003;border-radius:2px;overflow:hidden}
 .mini img.anchor{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.half{position:absolute;left:0;width:100%;height:49.3%;background:#fff;border:1px solid var(--ink);cursor:pointer;overflow:hidden}
+.half.top{top:0}
+.half.bot{top:50.7%}
+.half img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.half.empty{background:transparent;border:1px dashed var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;opacity:.6}
+.half.target{outline:3px solid var(--cobalt)}
 .slot{position:absolute;background:#fff;border:1px solid var(--ink);border-radius:1px;box-shadow:1px 1px 0 #0003;cursor:pointer;overflow:hidden}
 .slot img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .slot.empty{background:transparent;border:1px dashed var(--ink);box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:9px;opacity:.6}

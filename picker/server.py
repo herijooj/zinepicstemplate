@@ -27,7 +27,8 @@ GRID = {
     "pola4": (41, 37), "pola5": (5, 14), "pola6": (41, 12),
     "pola7": (23, 48),
 }
-SLOTS = ["anchor", "pola1", "pola2", "pola3", "pola4", "pola5", "pola6", "pola7"]
+SLOTS = ["anchor", "half1", "half2", "pola1", "pola2", "pola3",
+         "pola4", "pola5", "pola6", "pola7"]
 
 HEADER = [
     "# layout.tsv -- zine photo placement. Columns: page <TAB> slot <TAB> photo <TAB> rotate(deg).",
@@ -70,7 +71,9 @@ def validate(rows, pool_names):
     """Mirror of `layout.sh check`. Returns list of error strings."""
     errs = []
     seen_slot, seen_photo = {}, {}
-    nanchor = npola = 0
+    nanchor = nhalf = npola = 0
+    halves = {1: 0, 8: 0}
+    polas = {p: 0 for p in range(2, 8)}
     for i, r in enumerate(rows):
         where = "row %d" % (i + 1)
         if r["page"] not in range(1, 9):
@@ -82,10 +85,25 @@ def validate(rows, pool_names):
         seen_slot[(r["page"], r["slot"])] = True
         if r["slot"] == "anchor":
             nanchor += 1
+            if r["page"] < 2 or r["page"] > 7:
+                errs.append("%s: anchors only on pages 2..7" % where)
+        elif r["slot"] in ("half1", "half2"):
+            nhalf += 1
+            if r["page"] not in (1, 8):
+                errs.append("%s: halves only on pages 1,8" % where)
+            else:
+                halves[r["page"]] += 1
+            try:
+                if float(r["rotate"]) != 0:
+                    errs.append("%s: halves stay unrotated" % where)
+            except (TypeError, ValueError):
+                pass
         else:
             npola += 1
             if r["page"] < 2 or r["page"] > 7:
                 errs.append("%s: polaroids only on pages 2..7" % where)
+            else:
+                polas[r["page"]] += 1
         if r["photo"] in seen_photo:
             errs.append("duplicate photo: %s" % r["photo"])
         seen_photo[r["photo"]] = True
@@ -98,12 +116,17 @@ def validate(rows, pool_names):
             float(r["rotate"])
         except (TypeError, ValueError):
             errs.append("%s: bad rotate %r" % (where, r["rotate"]))
-    if nanchor != 8:
-        errs.append("want 8 anchors, have %d" % nanchor)
+    if nanchor != 6:
+        errs.append("want 6 anchors, have %d" % nanchor)
+    if halves[1] != 2:
+        errs.append("page 1: want half1+half2")
+    if halves[8] != 2:
+        errs.append("page 8: want half1+half2")
+    if nhalf != 4:
+        errs.append("want 4 halves, have %d" % nhalf)
     for p in range(2, 8):
-        n = sum(1 for r in rows if r["page"] == p and r["slot"] != "anchor")
-        if n != 7:
-            errs.append("page %d: want 7 polaroids, have %d" % (p, n))
+        if polas[p] != 7:
+            errs.append("page %d: want 7 polaroids, have %d" % (p, polas[p]))
     return errs
 
 

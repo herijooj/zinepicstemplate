@@ -26,9 +26,11 @@ page <TAB> slot <TAB> photo <TAB> rotate
 2    pola1   photos/some-memory.jpg  11.5
 ```
 
-- `slot`: `anchor` (full-bleed, one per page) or `pola1`…`pola7`
+- `slot`: `anchor` (full-bleed, one per inner page 2–7),
+  `half1`/`half2` (cover + back split: top/bottom half-bleed,
+  pages 1 and 8 only, always `0.0`), or `pola1`…`pola7`
   (fixed polaroid grid, inner pages 2–7 only).
-- 8 anchors + 42 polaroids = 50 photos, each exactly once.
+- 6 anchors + 4 halves + 42 polaroids = 52 photos, each exactly once.
 - `rotate` is free for anchors too, but keep anchors at `0.0`
   (full-bleed stays aligned).
 

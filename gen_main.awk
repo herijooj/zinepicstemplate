@@ -9,7 +9,8 @@
 # pool.tsv input: sorted photo table: file \t width \t height
 #   (from `layout.sh sync`: exiftool scan of photos/, LC_ALL=C sorted).
 # layout.tsv input: page \t slot \t photo \t rotate
-#   slot = anchor (full-bleed, pages 1..8) or pola1..pola7 (inner pages 2..7).
+#   slot = anchor (full-bleed, pages 2..7), half1/half2 (cover/back
+#   split, pages 1 and 8, unrotated) or pola1..pola7 (pages 2..7).
 #
 # Geometry (polaroid frames 28 x 35 mm, photo 24 x 26):
 #   pola1..pola7 lower-left coords, two columns (x = 5 / 41) x three rows
@@ -66,6 +67,20 @@ function coverfit_pola(f,   r) {  # photo rect 24 x 26 (~4:5)
   return (r > 0.9231) ? "height=26mm" : "width=24mm"
 }
 
+function coverfit_half(f,   r) {  # half panel 74.25 x 51.75 (aspect 1.435)
+  r = wby[f] / hby[f]
+  return (r > 1.4348) ? "height=51.75mm" : "width=74.25mm"
+}
+
+# first unused pool photo at/after index FROM (cyclic) -- init only
+function nextfree(from,   o, i) {
+  for (o = 0; o < n; o++) {
+    i = ((from - 1 + o) % n) + 1
+    if (!(photo[i] in used)) return i
+  }
+  return 1
+}
+
 # ---- stickers (clamped into each page's safe zone)
 function emitSticker(kind, x, y, a, b, rot, page,   rx, ry, sx, sy, hiY) {
   if (kind == "washi" || kind == "washiR" || kind == "washiB" || kind == "washiG" || kind == "ticket") { rx = a/2; ry = b/2; sx = x - rx; sy = y - ry }
@@ -105,12 +120,12 @@ function emitStickers(page) {
   # NOTE: photo layout comes from layout.tsv; only stickers vary per page.
   # Each page gets 5 distinct stickers (max 1 of each kind per page),
   # mixed generic + nostalgic + washi colours, some on photo corners.
-  if (page == 1) {  # cover: keep title zone (y~65-100) clear, decorate below
-    emitSticker("star",    12, 18, 5, 0, 15, page)
-    emitSticker("washi",   54,  9, 22, 6, -30, page)
-    emitSticker("sparkle", 62, 30, 3, 0, 8, page)
-    emitSticker("heart",    8, 32, 5, 0, -10, page)
-    emitSticker("moon",    60, 46, 5, 0, -12, page)
+  if (page == 1) {  # cover: title sits on the middle seam, decorate top/bottom halves
+    emitSticker("star",    12, 82, 5, 0, 15, page)
+    emitSticker("washi",   52, 88, 20, 6, -25, page)
+    emitSticker("sparkle", 62, 74, 3, 0, 8, page)
+    emitSticker("heart",   10, 16, 5, 0, -10, page)
+    emitSticker("moon",    58, 24, 5, 0, 12, page)
   }
   else if (page == 2) {
     emitSticker("heart",   10, 96, 5, 0, 12, page)
@@ -165,23 +180,26 @@ function emitStickers(page) {
 
 END {
   if (mode == "init") {
-    # ---- anchors: 8 spread picks (pages 1..8), no rotation
-    # page 8 (back cover) is pinned to the big group portrait, like the front
-    for (k = 0; k < 8; k++) {
-      if (k == 7) {
-        for (ai = 1; ai <= n; ai++) if (photo[ai] == "photos/PICT0271.jpg") break
-        if (ai > n) ai = n
-      } else ai = int(k * (n - 1) / 7) + 1
+    # ---- inner anchors: 6 spread picks (pages 2..7), no rotation
+    for (k = 1; k <= 6; k++) {
+      ai = int(k * (n - 1) / 7) + 1
       anchor[k] = photo[ai]
+      used[photo[ai]] = 1
     }
-    # ---- polaroids: 42 spread picks from non-anchor photos
+    # ---- cover halves: top = old cover spread pick, bottom = next free photo
+    ai0 = 1
+    coverA = photo[ai0]; used[coverA] = 1
+    coverB = photo[nextfree(ai0 + 1)]; used[coverB] = 1
+    # ---- back halves: top = pinned group portrait, bottom = next free photo
+    for (ai = 1; ai <= n; ai++) if (photo[ai] == "photos/PICT0271.jpg") break
+    if (ai > n) ai = n
+    backA = photo[ai]; used[backA] = 1
+    backB = photo[nextfree(ai + 1)]; used[backB] = 1
+    # ---- polaroids: 42 spread picks from the remaining pool
+    # ---- polaroids: 42 spread picks from the photos not used above
     nA = 0
-    for (i = 1; i <= n; i++) {
-      ok = 1
-      for (k = 0; k < 8; k++)
-        if (photo[i] == anchor[k]) ok = 0
-      if (ok) nonanchor[++nA] = photo[i]
-    }
+    for (i = 1; i <= n; i++)
+      if (!(photo[i] in used)) nonanchor[++nA] = photo[i]
     for (j = 0; j < 42; j++) {
       pi = int(j * nA / 42) + 1
       pol[j] = nonanchor[pi]
@@ -199,17 +217,20 @@ END {
     # ---- emit layout.tsv (explicit placement; rotate written out)
     print "# layout.tsv -- zine photo placement. Columns: page <TAB> slot <TAB> photo <TAB> rotate(deg)."
     print "# Edit freely (swap photos, tweak rotates), then run ./build.sh."
-    print "# Slots: anchor (full-bleed, one per page) or pola1..pola7 (inner pages 2..7 only)."
-    print "# Validate with ./layout.sh check. Regenerate with ./layout.sh init --force."
-    # page-major, anchor-then-slots: stable order, immune to row shuffling
-    for (p = 1; p <= 8; p++) {
+    print "# Slots: anchor (full-bleed, pages 2..7), half1/half2 (cover/back split, pages 1,8), pola1..pola7 (inner pages 2..7)."
+    print "# Halves stay unrotated (split stays aligned). Validate with ./layout.sh check. Regenerate with ./layout.sh init --force."
+    # page-major: stable order, immune to row shuffling
+    printf "1\thalf1\t%s\t0.0\n", coverA
+    printf "1\thalf2\t%s\t0.0\n", coverB
+    for (p = 2; p <= 7; p++) {
       printf "%d\tanchor\t%s\t0.0\n", p, anchor[p-1]
-      if (p >= 2 && p <= 7)
-        for (s = 0; s < 7; s++)
-          for (j = 0; j < 42; j++)
-            if (polpage[j] == p && slot[j] == slotname[s])
-              printf "%d\t%s\t%s\t%.1f\n", p, slot[j], pol[j], pangle[j]
+      for (s = 0; s < 7; s++)
+        for (j = 0; j < 42; j++)
+          if (polpage[j] == p && slot[j] == slotname[s])
+            printf "%d\t%s\t%s\t%.1f\n", p, slot[j], pol[j], pangle[j]
     }
+    printf "8\thalf1\t%s\t0.0\n", backA
+    printf "8\thalf2\t%s\t0.0\n", backB
     exit
   }
 
@@ -220,6 +241,9 @@ END {
       anchor[lpage[r]-1] = lphoto[r]
       anchorRot[lpage[r]-1] = lrot[r]
       anchorOpt[lpage[r]-1] = coverfit_anchor(lphoto[r])
+    } else if (lslot[r] == "half1" || lslot[r] == "half2") {
+      hphoto[lpage[r]lslot[r]] = lphoto[r]
+      hopt[lpage[r]lslot[r]] = coverfit_half(lphoto[r])
     } else {
       npol++
       pol[npol] = lphoto[r]
@@ -245,7 +269,7 @@ END {
   print "\\clearpage"
   print "\\begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]"
   print "  \\zinedoodle"
-  printf "  \\zineanchor{%s}{%.1f}{%s}\n", anchor[0], anchorRot[0], anchorOpt[0]
+  printf "  \\zinehalf{%s}{%s}{%s}{%s}\n", hphoto["1half1"], hopt["1half1"], hphoto["1half2"], hopt["1half2"]
   print "  \\zinecover{Root's}{e Amigos}"
   emitStickers(1)
   print "\\end{tikzpicture}"
@@ -267,7 +291,7 @@ END {
   print "\\clearpage"
   print "\\begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]"
   print "  \\zinedoodle"
-  printf "  \\zineanchor{%s}{%.1f}{%s}\n", anchor[7], anchorRot[7], anchorOpt[7]
+  printf "  \\zinehalf{%s}{%s}{%s}{%s}\n", hphoto["8half1"], hopt["8half1"], hphoto["8half2"], hopt["8half2"]
   emitStickers(8)
   print "\\end{tikzpicture}"
   print ""

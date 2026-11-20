@@ -132,14 +132,35 @@
 %% ---- \zine@titlefont: Permanent Marker for the cover (fits A7 width).
 \newcommand*\zine@titlefont{\fontsize{28}{34}\selectfont}
 
+%% ------------------------------------------------------------ cover split
+%% Two half-bleed photos (top/bottom halves of the panel) with a thin
+%% paper seam at the middle. Used on the cover (page 1) and back cover
+%% (page 8). Cover-fit per half: the half panel is 74.25 x 51.75 mm
+%% (aspect 1.435): wider photos fill height, taller ones fill width.
+%% #1 top photo, #2 top cover-fit opt, #3 bottom photo, #4 bottom opt.
+\newcommand*\zinehalf[4]{%
+  \begin{scope}
+    \clip (0,0) rectangle (74.25mm,105mm);
+    \begin{scope}
+      \clip (0,53.25mm) rectangle (74.25mm,105mm);
+      \node[anchor=center, inner sep=0pt] at (37.125mm, 79.125mm)
+        {\includegraphics[#2]{#1}};
+    \end{scope}
+    \begin{scope}
+      \clip (0,0) rectangle (74.25mm,51.75mm);
+      \node[anchor=center, inner sep=0pt] at (37.125mm, 25.875mm)
+        {\includegraphics[#4]{#3}};
+    \end{scope}
+  \end{scope}}
+
 %% ------------------------------------------------------------ cover title
-%% Two-line title near the TOP of the cover, strictly centred on the
-%% panel (x = 74.25/2 = 37.125 mm). Two one-line centred nodes 10 mm apart
+%% Two-line title CENTRED on the panel middle (x = 74.25/2, y ~ 52 mm),
+%% sitting on the cover split's paper seam. Two one-line centred nodes 10 mm apart
 %% (explicit leading -- \\ leading inside one node collapses at this size).
 %% Yellow highlight + long hand-drawn double underline, all centred.
 %% #1 line 1, #2 line 2.
 \newcommand*\zinecover[2]{%  #1 line 1, #2 line 2
-  \begin{scope}[shift={(37.125mm, 84mm)}]
+  \begin{scope}[shift={(37.125mm, 52mm)}]
     \node[fill=zyellow, opacity=0.55, inner sep=2pt,
       minimum width=62mm, minimum height=26mm, anchor=center] (hl) at (0,-3mm) {};
     \node[align=center, anchor=center, inner sep=0pt]

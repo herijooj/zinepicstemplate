@@ -59,16 +59,19 @@ cmd_check() {  # validate layout.tsv against pool.tsv + disk
     while ((getline line < pool) > 0) {
       split(line, f, "\t"); havedim[f[1]] = f[2] "x" f[3]
     }
-    nanchor = 0; npola = 0
+    nanchor = 0; npola = 0; nhalf = 0
   }
   /^#/ || NF == 0 { next }
   NF < 4 || $1 !~ /^[1-8]$/                          { bad("line " NR ": bad page: " $0); next }
-  $2 != "anchor" && $2 !~ /^pola[1-7]$/              { bad("line " NR ": bad slot: " $0); next }
-  ($2 == "anchor") && (seen[$1,"anchor"]++)          { bad("page " $1 ": two anchors") }
-  ($2 != "anchor") && (seen[$1,$2]++)               { bad("page " $1 ": slot " $2 " twice") }
-  ($2 != "anchor") && ($1 < 2 || $1 > 7)            { bad("line " NR ": polaroids only on pages 2..7") }
+  $2 != "anchor" && $2 != "half1" && $2 != "half2" && $2 !~ /^pola[1-7]$/ { bad("line " NR ": bad slot: " $0); next }
+  (seen[$1,$2]++)                                     { bad("page " $1 ": slot " $2 " twice") }
+  ($2 == "anchor") && ($1 < 2 || $1 > 7)            { bad("line " NR ": anchors only on pages 2..7") }
+  (($2 == "half1" || $2 == "half2")) && ($1 != 1 && $1 != 8) { bad("line " NR ": halves only on pages 1,8") }
+  ($2 ~ /^pola/) && ($1 < 2 || $1 > 7)                { bad("line " NR ": polaroids only on pages 2..7") }
+  (($2 == "half1" || $2 == "half2")) && ($4 != 0) { bad("line " NR ": halves stay unrotated (split): " $0) }
   ($2 == "anchor")                                  { nanchor++; anchor[$1] = $3 }
-  ($2 != "anchor")                                  { npola++; slotof[$1]++ }
+  (($2 == "half1" || $2 == "half2"))              { nhalf++; halfof[$1]++ }
+  ($2 ~ /^pola/)                                     { npola++; slotof[$1]++ }
   $4 !~ /^-?[0-9]+(\.[0-9]+)?$/                     { bad("line " NR ": bad rotate: " $0) }
   {
     key = $3; sub(/^photos\//, "", key)  # pool.tsv stores bare filenames
@@ -79,10 +82,13 @@ cmd_check() {  # validate layout.tsv against pool.tsv + disk
     if (!(key in havedim) && !warned[key]++) warn("not in pool.tsv (run sync): " $3)
   }
   END {
-    if (nanchor != 8) bad("want 8 anchors, have " nanchor)
+    if (nanchor != 6) bad("want 6 anchors, have " nanchor)
+    if (nhalf != 4) bad("want 4 halves (2 cover + 2 back), have " nhalf)
+    if ((halfof[1] + 0) != 2) bad("page 1: want half1+half2, have " (halfof[1] + 0))
+    if ((halfof[8] + 0) != 2) bad("page 8: want half1+half2, have " (halfof[8] + 0))
     for (p = 2; p <= 7; p++)
       if ((slotof[p] + 0) != 7) bad("page " p ": want 7 polaroids, have " (slotof[p] + 0))
-    if (fails == 0) print "   ok: 8 anchors + 42 polaroids, no duplicates, all files present"
+    if (fails == 0) print "   ok: 6 anchors + 4 halves + 42 polaroids, no duplicates, all files present"
     exit (fails > 0)
   }
   function bad(m) { print "   FAIL: " m; fails++ }

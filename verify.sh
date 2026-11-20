@@ -30,10 +30,11 @@ done < <(grep -oE 'node at \([0-9.]+mm, [0-9.]+mm\)[^;]*page=[0-9]+' make_sheet.
 echo "   print file draw commands (want 0): $(grep -cE '\\draw' make_sheet.tex)"
 echo "   guides drawn in make_guide.tex (want >0): $(grep -cE '\\draw' make_guide.tex)"
 
-echo "-- photos used (8 anchors + 42 polaroids = 50; each exactly once)"
-echo "   zineanchor calls (want 8): $(grep -cE 'zineanchor[{]photos/' main.tex)"
+echo "-- photos used (6 anchors + 4 halves + 42 polaroids = 52; each exactly once)"
+echo "   zineanchor calls (want 6): $(grep -cE 'zineanchor[{]photos/' main.tex)"
+echo "   zinehalf calls (want 2): $(grep -cE 'zinehalf[{]photos/' main.tex)"
 echo "   zinepolaroid calls (want 42): $(grep -cE 'zinepolaroid[{]photos/' main.tex)"
-echo "   distinct photos used (want 50): $(grep -oE 'photos/[^}]+' main.tex | sort -u | wc -l)"
+echo "   distinct photos used (want 52): $(grep -oE 'photos/[^}]+' main.tex | sort -u | wc -l)"
 echo "   duplicate placements (want 0): $(grep -oE 'photos/[^}]+' main.tex | sort | uniq -d | wc -l)"
 echo "   missing files (want 0): $(grep -oE 'photos/[^}]+' main.tex | sort -u | while read -r f; do [ -f "$f" ] || echo "$f"; done | wc -l)"
 
