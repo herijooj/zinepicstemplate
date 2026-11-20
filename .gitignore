@@ -17,3 +17,6 @@ preview/
 .direnv/
 # Scratch.
 t*.pdf
+
+# picker backup of layout.tsv (previous save)
+layout.tsv.bak

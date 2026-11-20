@@ -6,6 +6,7 @@ pkgs.mkShell {
     texliveSmall    # xelatex, tikz, fontspec, pdfpages for the zine
     poppler-utils   # pdftoppm / pdfinfo, for previewing and checking pages
     exiftool        # pool scan (photo dimensions) for layout.sh sync
+    python3         # photo picker WebUI (./layout.sh picker)
   ];
 
   shellHook = ''

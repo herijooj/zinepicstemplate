@@ -154,6 +154,14 @@ cmd_contact() {  # visual picking aid: contact.pdf + contact.html
   echo "   wrote contact.pdf + contact.html"
 }
 
+cmd_picker() {  # local WebUI: drag photos onto page slots, writes layout.tsv
+  port="${1:-8077}"
+  if command -v python3 >/dev/null 2>&1; then
+    exec python3 picker/server.py "$port"
+  else
+    exec nix-shell --run "python3 picker/server.py $port"
+  fi
+}
 cmd_dupes() {  # read-only report of byte-identical photos
   echo "== layout: scanning photos/ for exact duplicates (md5, read-only)"
   (cd photos && md5sum -- *.jpg *.jpeg 2>/dev/null) | LC_ALL=C sort \
@@ -166,5 +174,6 @@ case "${1:-}" in
   check)   shift; cmd_check "$@" ;;
   contact) shift; cmd_contact "$@" ;;
   dupes)   shift; cmd_dupes "$@" ;;
-  *) echo "usage: ./layout.sh {sync|init [--force]|check|contact|dupes}"; exit 1 ;;
+  picker)  shift; cmd_picker "$@" ;;
+  *) echo "usage: ./layout.sh {sync|init [--force]|check|contact|dupes|picker [port]}"; exit 1 ;;
 esac

@@ -19,6 +19,12 @@ preview: $(PDF)
 contact:
 	./layout.sh contact
 
+# Local WebUI: drag photos onto page slots (writes layout.tsv).
+# Usage: make picker [PORT=8077]
+PORT ?= 8077
+picker:
+	./layout.sh picker $(PORT)
+
 check:
 	./layout.sh check
 

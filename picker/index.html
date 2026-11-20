@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zine picker — what picture goes where</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>zine picker</h1>
+    <p id="coverage"></p>
+  </div>
+  <div class="tools">
+    <input id="search" type="search" placeholder="filter filenames…" autocomplete="off">
+    <div class="filters">
+      <button data-f="all" class="on">all</button><button data-f="unused">unused</button><button data-f="used">in zine</button>
+    </div>
+    <button id="save" disabled>save layout.tsv<span id="dot"></span></button>
+  </div>
+</header>
+<p id="status"></p>
+<main>
+  <section id="pool"><h2>pool <span id="poolcount"></span></h2><div id="grid"></div></section>
+  <section id="pages"><h2>pages <span class="hint">click a photo, then a slot · drag &amp; drop · drag slot→slot to swap</span></h2><div id="board"></div></section>
+</main>
+<footer>writes <code>layout.tsv</code> (backup: <code>layout.tsv.bak</code>) · photos/ never modified · run <code>./build.sh</code> after saving</footer>
+<!--STATE-->
+<script src="app.js"></script>
+</body>
+</html>

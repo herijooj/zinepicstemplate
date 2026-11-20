@@ -46,6 +46,26 @@ Typical session: `./layout.sh sync` → `./layout.sh contact` → open
 `contact.html`, pick photos, edit `layout.tsv` → `./layout.sh check` →
 `./build.sh` → `make preview` → look, adjust, repeat.
 
+### Web picker (recommended)
+
+```sh
+./layout.sh picker [port]   # or: make picker [PORT=8077]
+```
+
+Opens a local page (default http://127.0.0.1:8077): pool on the left
+(search, unused/in-zine filters, click-to-copy filenames), the 8 zine
+pages on the right with every slot in place.
+
+- **Click a photo, then a slot** to place it (replaces; the old photo
+  becomes unused). **Drag & drop** works too, photo→slot or slot→slot
+  to **swap**.
+- **− / +** on a slot tilts it; anchors keep rotation 0 (full-bleed).
+- Covers (p1, p8) take only anchors; inner pages take exactly 7 polaroids.
+- **Save** validates everything (same rules as `check`) and writes
+  `layout.tsv`, keeping the previous version as `layout.tsv.bak`.
+  Photos on disk are never touched.
+- After saving: `./build.sh` → `make preview` → look.
+
 ## Reproducibility
 
 - `photos/` (469 MB, 417 jpgs) is **not in git** (see `.gitignore`).
@@ -65,7 +85,8 @@ Typical session: `./layout.sh sync` → `./layout.sh contact` → open
 |------|------|
 | `layout.tsv` | **edit me**: photo placement (committed) |
 | `pool.tsv` | photo lock file from `sync` (committed) |
-| `layout.sh` | picker toolkit (`sync/init/check/contact/dupes`) |
+| `layout.sh` | picker toolkit (`sync/init/check/contact/dupes/picker`) |
+| `picker/` | local WebUI: photo board + slots, writes `layout.tsv` |
 | `gen_main.awk` | `layout.tsv`+`pool.tsv` → `main.tex` (modes `init`/`tex`) |
 | `gen_main.sh` | wrapper regenerating `main.tex` |
 | `gen_parse.awk` | exiftool output → TSV rows |

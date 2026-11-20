@@ -33,6 +33,9 @@ BEGIN {
   gx["pola5"] = 5;  gy["pola5"] = 14
   gx["pola6"] = 41; gy["pola6"] = 12
   gx["pola7"] = 23; gy["pola7"] = 48
+  slotname[0] = "pola1"; slotname[1] = "pola2"; slotname[2] = "pola3"
+  slotname[3] = "pola4"; slotname[4] = "pola5"; slotname[5] = "pola6"
+  slotname[6] = "pola7"
 }
 
 # ---- first input file is always the pool
@@ -198,10 +201,15 @@ END {
     print "# Edit freely (swap photos, tweak rotates), then run ./build.sh."
     print "# Slots: anchor (full-bleed, one per page) or pola1..pola7 (inner pages 2..7 only)."
     print "# Validate with ./layout.sh check. Regenerate with ./layout.sh init --force."
-    for (k = 0; k < 8; k++)
-      printf "%d\tanchor\t%s\t0.0\n", k + 1, anchor[k]
-    for (j = 0; j < 42; j++)
-      printf "%d\t%s\t%s\t%.1f\n", polpage[j], slot[j], pol[j], pangle[j]
+    # page-major, anchor-then-slots: stable order, immune to row shuffling
+    for (p = 1; p <= 8; p++) {
+      printf "%d\tanchor\t%s\t0.0\n", p, anchor[p-1]
+      if (p >= 2 && p <= 7)
+        for (s = 0; s < 7; s++)
+          for (j = 0; j < 42; j++)
+            if (polpage[j] == p && slot[j] == slotname[s])
+              printf "%d\t%s\t%s\t%.1f\n", p, slot[j], pol[j], pangle[j]
+    }
     exit
   }
 
