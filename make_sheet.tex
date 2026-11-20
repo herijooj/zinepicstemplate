@@ -1,0 +1,27 @@
+%% make_sheet.tex -- the A4 landscape imposition of the A7 zine.
+%%
+%% The sheet (297 x 210 mm) is a 4 x 2 grid of A7 panels (74.25 x 105 mm):
+%%   bottom row, L-R: pages 6, 7, 8, 1
+%%   top row,    L-R: pages 5, 4, 3, 2  (each rotated 180 degrees)
+%% The print file carries no fold lines; see make_guide.pdf.
+
+\documentclass[12pt]{article}
+\usepackage[a4paper, landscape, margin=0pt]{geometry}
+\usepackage{tikz}
+\usepackage{graphicx}
+
+\begin{document}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]
+  %% ---- bottom row, L-R: pages 6, 7, 8, 1
+  \node at (37.125mm, 52.5mm)   {\includegraphics[page=6]{zine_pages.pdf}};
+  \node at (111.375mm, 52.5mm)  {\includegraphics[page=7]{zine_pages.pdf}};
+  \node at (185.625mm, 52.5mm)  {\includegraphics[page=8]{zine_pages.pdf}};
+  \node at (259.875mm, 52.5mm)  {\includegraphics[page=1]{zine_pages.pdf}};
+  %% ---- top row, L-R: pages 5, 4, 3, 2 -- each rotated 180 degrees
+  \node at (37.125mm, 157.5mm)  {\includegraphics[page=5, angle=180]{zine_pages.pdf}};
+  \node at (111.375mm, 157.5mm){\includegraphics[page=4, angle=180]{zine_pages.pdf}};
+  \node at (185.625mm, 157.5mm){\includegraphics[page=3, angle=180]{zine_pages.pdf}};
+  \node at (259.875mm, 157.5mm){\includegraphics[page=2, angle=180]{zine_pages.pdf}};
+\end{tikzpicture}
+\end{document}

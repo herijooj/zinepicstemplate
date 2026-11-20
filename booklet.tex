@@ -1,0 +1,12 @@
+%% Imposes main.pdf for printing: two A5 pages side by side on A4 landscape,
+%% in the order you need to fold and staple. Nothing to edit -- just remake
+%% main.pdf first (`make`) and then run `make booklet`.
+%%
+%% Print booklet.pdf double-sided, flip on SHORT edge, then fold down the
+%% middle. The page count of main.pdf must be a multiple of four.
+\documentclass[a4paper,landscape]{article}
+\usepackage{pdfpages}
+
+\begin{document}
+\includepdf[pages=-, signature=12, landscape]{main.pdf}
+\end{document}

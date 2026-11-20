@@ -1,0 +1,245 @@
+%% stickers.tex -- reusable hand-drawn stickers for the A7 fold-out zine.
+%% (self-contained: enables @ for \zine@titlefont from zine.sty)
+\makeatletter
+%%
+%% Every macro draws at the origin of the enclosing TikZ picture; put it
+%% somewhere with, e.g.,
+%%   \begin{scope}[shift={(20mm,10mm)}, rotate=15]\zstar[5mm]\end{scope}
+%%
+%% Hand-drawn rules: thick ink outlines (1.2-2pt) with zwobble, palette
+%% fill offset 0.4-0.8mm from the outline (misregistration). Nothing
+%% geometric / vector-clean.
+%%
+%% Generic:   \zstar, \zheart, \zflower, \zsparkle, \zarrow,
+%%            \zwashi, \zwashiC, \zscribble, \zcircled,
+%%            \zmoon, \zsun, \zbolt, \zbow, \zcherry, \zsmiley
+%% Nostalgic: \zcamera, \zcassette, \zfilms, \zticket, \zcampolar
+
+%% ---- generic
+
+% five-point star: yellow fill (misregistered) + wobbly ink outline
+\newcommand*\zstar[1][5mm]{%
+  \fill[zyellow] (0.5mm,-0.6mm) -- (-1.5mm,0.2mm) -- (-0.9mm,1.6mm)
+    -- (0.4mm,1.1mm) -- (1.3mm,1.9mm) -- (1.2mm,0.5mm)
+    -- (2.6mm,-0.1mm) -- (1.1mm,-0.7mm) -- (1.3mm,-2.1mm)
+    -- (0.2mm,-1.2mm) -- cycle;
+  \draw[zink, line width=1.5pt, zwobble, line join=round]
+    (90:#1) -- (234:#1) -- (18:#1) -- (162:#1) -- (306:#1) -- cycle;
+  \fill[zyellow] (0,0) circle (0.12*#1);}
+
+% heart: red fill offset + ink outline (braced coords: forces pgfmath
+% parsing -- bare positive-leading dim*scalar overflows TikZ at path start).
+% Fill shifted 0.5mm for misregistration.
+\newcommand*\zheart[1][5mm]{%
+  \begin{scope}[shift={(0.5mm,-0.5mm)}]
+    \fill[zred, opacity=0.9] ({-0.3*#1},{0.22*#1}) circle (0.24*#1);
+    \fill[zred, opacity=0.9] ({0.3*#1},{0.22*#1}) circle (0.24*#1);
+    \fill[zred, opacity=0.9] (0,0.35*#1)
+      -- ({-0.42*#1},{0.12*#1}) -- ({0.42*#1},{0.12*#1}) -- cycle;
+  \end{scope}
+  \draw[zink, line width=1.4pt] ({-0.3*#1},{0.22*#1}) circle (0.24*#1);
+  \draw[zink, line width=1.4pt] ({0.3*#1},{0.22*#1}) circle (0.24*#1);
+  \draw[zink, line width=1.4pt, zwobble, line join=round]
+    (0,0.35*#1) -- ({-0.42*#1},{0.12*#1}) -- ({0.42*#1},{0.12*#1}) -- cycle;}
+
+% flower: cobalt petals (ink outline) + yellow centre, slightly wonky
+\newcommand*\zflower[1][6mm]{%
+  \foreach \i in {0,...,4} {
+    \pgfmathsetmacro{\px}{0.65*cos(72*\i)}%
+    \pgfmathsetmacro{\py}{0.65*sin(72*\i)}%
+    \fill[zcobalt, opacity=0.9] ({\px*#1+0.5mm},{\py*#1-0.6mm}) circle (0.24*#1);
+  }
+  \foreach \i in {0,...,4} {
+    \pgfmathsetmacro{\px}{0.65*cos(72*\i)}%
+    \pgfmathsetmacro{\py}{0.65*sin(72*\i)}%
+    \draw[zink, line width=1.2pt] ({\px*#1},{\py*#1}) circle (0.22*#1);
+  }
+  \fill[zyellow] (0.5mm,-0.5mm) circle (0.2*#1);
+  \draw[zink, line width=1.3pt] (0,0) circle (0.18*#1);}
+
+% 4-point sparkle: white/yellow fill offset + ink outline
+\newcommand*\zsparkle[1][2mm]{%
+  \fill[zyellow, opacity=0.9]
+    (0.5mm,-0.4mm) -- (0.9mm,0.2mm) -- (1.6mm,0.3mm) -- (0.9mm,0.8mm)
+    -- (0.5mm,1.8mm) -- (0.1mm,0.8mm) -- (-0.8mm,0.4mm)
+    -- (0.1mm,-0.1mm) -- cycle;
+  \draw[zink, line width=1.4pt, zwobble, line join=round]
+    (0,#1) -- (0.35*#1,0.35*#1) -- (#1,0) -- (0.35*#1,-0.35*#1)
+    -- (0,-#1) -- (-0.35*#1,-0.35*#1) -- (-#1,0) -- (-0.35*#1,0.35*#1) -- cycle;}
+
+% hand-drawn curved arrow
+\newcommand*\zarrow[1][3mm]{%
+  \draw[zred, line width=2.2pt, zwobbly, ->, line cap=round]
+    (0.5mm,-0.5mm) .. controls (0.4*#1,1.2mm) and (0.7*#1,1mm) .. (#1,0.5*#1);
+  \draw[zink, line width=1.4pt, zwobble, ->, line cap=round]
+    (0,0) .. controls (0.4*#1,1mm) and (0.7*#1,0.8mm) .. (#1,0.4*#1);}
+
+% washi tape with colour parameter: torn zigzag ends, translucent,
+% thin wobbly edge lines (no clean rectangle).
+% #1 colour, #2 width, #3 height
+\newcommand*\zwashiC[3]{%
+  \begin{scope}
+    \clip (0,0) -- (#2,0.4mm) -- (#2,#3) -- (0,#3-0.4mm) -- cycle;
+    \fill[#1, opacity=0.55] (0,0) rectangle (#2,#3);
+    \fill[white, opacity=0.35] (0,0.3*#3) rectangle (#2,0.55*#3);
+    \foreach \xx in {2,6,...,40} {
+      \fill[white, opacity=0.25] (\xx mm,0) rectangle (\xx mm+1.2mm,#3);
+    }
+  \end{scope}
+  \draw[zink, line width=0.7pt, zwobble, line cap=round]
+    (0.3mm,#3-0.3mm) -- (#2-0.3mm,#3+0.2mm);
+  \draw[zink, line width=0.7pt, zwobble, line cap=round]
+    (0.3mm,0.3mm) -- (#2-0.3mm,-0.2mm);
+  % torn ends
+  \draw[zink, line width=0.7pt, zwobble] (0,0) -- (1mm,0.5*#3) -- (0,#3);
+  \draw[zink, line width=0.7pt, zwobble] (#2,0) -- (#2-1mm,0.5*#3) -- (#2,#3);}
+
+% classic yellow washi (backwards compatible: \zwashi{w}{h})
+\newcommand*\zwashi[2]{\zwashiC{zyellow}{#1}{#2}}
+
+% squiggle underline: red under-stroke offset + ink over-stroke
+\newcommand*\zscribble[1][10mm]{%
+  \draw[zred, line width=2.4pt, zwobbly, line cap=round]
+    (0.5mm,-0.7mm) .. controls (0.25*#1,0mm) and (0.6*#1,0.6mm) .. (#1+0.4mm,-0.2mm);
+  \draw[zink, line width=1.6pt, zwobble]
+    (0,0) .. controls (0.25*#1,0.6mm) and (0.6*#1,1.2mm) .. (#1,0);}
+
+% circled scribble: double wobbly ellipse around one short word
+\newcommand*\zcircled[1][8mm]{%
+  \node[align=center, inner sep=3pt]
+       {\zine@titlefont\small\textcolor{zink}{#1}};%
+  \draw[zink, line width=1.1pt] (0,0) ellipse (0.85*#1 and 0.42*#1);
+  \draw[zred, line width=1pt] (0.4mm,-0.5mm)
+    ellipse (0.9*#1 and 0.47*#1);}
+
+%% ---- extra doodles for variety (palette only)
+
+% crescent moon: yellow fill offset + ink outline (arcs plain: decoration
+% overflows on rotated scaled arcs, double stroke keeps it hand-drawn)
+\newcommand*\zmoon[1][5mm]{%
+  \fill[zyellow] (0.5mm,-0.5mm) circle (0.5*#1);
+  \fill[zpaper] (-0.4mm,0.6mm) circle (0.42*#1);
+  \draw[zink, line width=1.4pt] (-0.47*#1,-0.17*#1) arc (200:340:0.5*#1);
+  \draw[zred, line width=1pt] ({-0.47*#1+0.4mm},{-0.17*#1-0.4mm}) arc (200:340:0.5*#1);}
+
+% sun: yellow disc + wobbly rays
+\newcommand*\zsun[1][5mm]{%
+  \fill[zyellow] (0.5mm,-0.5mm) circle (0.35*#1);
+  \draw[zink, line width=1.4pt] (0,0) circle (0.33*#1);
+  \foreach \a in {0,45,...,315} {
+    \pgfmathsetmacro{\sx}{0.48*cos(\a)}%
+    \pgfmathsetmacro{\sy}{0.48*sin(\a)}%
+    \pgfmathsetmacro{\ex}{0.72*cos(\a)}%
+    \pgfmathsetmacro{\ey}{0.72*sin(\a)}%
+    \draw[zink, line width=1.1pt, zwobble, line cap=round]
+      ({\sx*#1},{\sy*#1}) -- ({\ex*#1},{\ey*#1});
+  }}
+
+% lightning bolt: yellow fill offset + ink outline
+\newcommand*\zbolt[1][6mm]{%
+  \fill[zyellow] ({0.18*#1},{-0.18*#1}) -- (0.08*#1,0.28*#1) -- (0.18*#1,0.28*#1)
+    -- (0.05*#1,0.63*#1) -- (0.28*#1,0.13*#1) -- (0.15*#1,0.13*#1) -- cycle;
+  \draw[zink, line width=1.4pt, zwobble, line join=round]
+    (-0.3*#1,0.5*#1) -- (0.1*#1,0.45*#1) -- (-0.15*#1,-0.05*#1)
+    -- (0.3*#1,-0.1*#1) -- (-0.05*#1,-0.55*#1) -- (-0.2*#1,0.05*#1)
+    -- (0.05*#1,0.1*#1) -- cycle;}
+
+% little bow / ribbon
+\newcommand*\zbow[1][6mm]{%
+  \fill[zred, opacity=0.9] (0.5mm,-0.5mm)
+    -- (-0.5*#1,0.2mm) -- (-0.35*#1,0.3*#1) -- cycle;
+  \fill[zred, opacity=0.9] (0.5mm,-0.5mm)
+    -- (0.5*#1,0.2mm) -- (0.35*#1,0.3*#1) -- cycle;
+  \draw[zink, line width=1.2pt, zwobble]
+    (0,0) -- (-0.5*#1,0) -- (-0.35*#1,0.32*#1) -- cycle;
+  \draw[zink, line width=1.2pt, zwobble]
+    (0,0) -- (0.5*#1,0) -- (0.35*#1,0.32*#1) -- cycle;
+  \fill[zcobalt] (0.4mm,-0.4mm) circle (0.1*#1);
+  \draw[zink, line width=1.2pt] (0,0) circle (0.1*#1);}
+
+% cherries: two red discs + green stem
+\newcommand*\zcherry[1][5mm]{%
+  % stem plain: short decorated curves overflow PGF random-steps on some transforms
+  \draw[zgreen, line width=1.4pt]
+    (-0.2*#1,-0.1*#1) .. controls (0,0.5*#1) and (0.2*#1,0.4*#1) .. (0.3*#1,0.5*#1);
+  \fill[zred] (-0.28*#1,-0.28*#1) circle (0.24*#1);
+  \fill[zred] (0.24*#1,-0.34*#1) circle (0.24*#1);
+  \draw[zink, line width=1.2pt] (-0.2*#1,-0.1*#1) circle (0.22*#1);
+  \draw[zink, line width=1.2pt] (0.3*#1,-0.2*#1) circle (0.22*#1);
+  \fill[white, opacity=0.8] (-0.28*#1,-0.2*#1) circle (0.05*#1);}
+
+% smiley: yellow face, ink features
+\newcommand*\zsmiley[1][5mm]{%
+  \fill[zyellow] (0.5mm,-0.5mm) circle (0.45*#1);
+  \draw[zink, line width=1.4pt] (0,0) circle (0.45*#1);
+  \fill[zink] (-0.15*#1,0.1*#1) circle (0.05*#1);
+  \fill[zink] (0.15*#1,0.1*#1) circle (0.05*#1);
+  % mouth plain: short decorated curves overflow PGF random-steps on some transforms
+  \draw[zink, line width=1.1pt]
+    (-0.2*#1,-0.12*#1) .. controls (0,-0.3*#1) .. (0.2*#1,-0.12*#1);}
+
+%% ---- nostalgic stickers (palette fills + misregistration)
+\newlength{\zfilmx}% scratch for films/cassette/node geometry (precompute
+\newlength{\zfilmy}%  all node maths: two maths in one node overflow pgfmath)
+\newlength{\zfilmz}%
+
+\newcommand*\zcamera[1][3mm]{%  disposable camera: red body, yellow flash
+  \fill[zred, opacity=0.9] ({-0.5*#1+0.5mm},{-0.5mm}) rectangle ({0.5*#1+0.5mm},{#1-0.5mm});
+  \path[fill=zwhite, draw=zink, line width=1.1pt, zwobble]
+    (-0.5*#1,0) rectangle (0.5*#1,#1);
+  \fill[zyellow] (-0.38*#1,0.62*#1) rectangle (-0.14*#1,0.86*#1);
+  \draw[zink, line width=0.8pt, zwobble]
+    (-0.38*#1,0.62*#1) rectangle (-0.14*#1,0.86*#1);
+  \pgfmathsetlength{\zfilmx}{0.45*#1}\pgfmathsetlength{\zfilmy}{0.08*#1}%
+  \node[fill=zwhite, draw=zink, line width=0.9pt,
+        circle, inner sep=\zfilmy] at (0,\zfilmx) {};
+  \fill[zcobalt] (0,0.45*#1) circle (0.05*#1);}
+
+\newcommand*\zcassette[1][6mm]{%  cassette: cobalt shell, yellow label
+  \fill[zcobalt, opacity=0.85] ({-0.5*#1+0.5mm},{0.15*#1-0.5mm})
+    rectangle ({0.5*#1+0.5mm},{0.8*#1-0.5mm});
+  \path[fill=zwhite, draw=zink, line width=1.1pt, zwobble, rounded corners=0.3mm]
+    (-0.5*#1,0.15*#1) rectangle (0.5*#1,0.8*#1);
+  \fill[zyellow, opacity=0.8] (-0.4*#1,0.58*#1) rectangle (0.4*#1,0.72*#1);
+  \foreach \x in {-1,1} {
+    \pgfmathsetlength{\zfilmx}{0.28*\x*#1}\pgfmathsetlength{\zfilmz}{0.42*#1}%
+    \pgfmathsetlength{\zfilmy}{0.06*#1}%
+    \node[fill=zwhite, draw=zink, line width=0.9pt,
+          circle, inner sep=\zfilmy] at (\zfilmx,\zfilmz) {};
+  }
+  \draw[zink, line width=0.9pt, zwobble] (-0.5*#1,0.85*#1) -- (0.5*#1,0.9*#1);}
+
+\newcommand*\zfilms[1][10mm]{%  film strip with sprocket holes
+  \fill[zink, opacity=0.85] ({-#1/2+0.5mm},{0.2*#1-0.5mm})
+    rectangle ({#1/2+0.5mm},{0.7*#1-0.5mm});
+  \path[fill=zwhite, draw=zink, line width=1.1pt, zwobble, rounded corners=0.2mm]
+    (-#1/2,0.2*#1) rectangle (#1/2,0.7*#1);
+  \foreach \i in {0,...,3} {
+    \pgfmathsetlength{\zfilmx}{#1*(-0.18+0.12*\i)}%
+    \fill[zcobalt] (\zfilmx+0.4mm,0.42*#1-0.4mm) circle (1.1pt);
+    \path[fill=zwhite, draw=zink, line width=0.6pt, zwobble]
+      (\zfilmx-1.4pt,0.38*#1) rectangle (\zfilmx+1.4pt,0.52*#1);
+  }}
+
+\newcommand*\zticket[2]{%  #1 width mm, #2 height mm -- bus ticket, red stub
+  \fill[zred, opacity=0.8] (0.5mm,-0.5mm) rectangle (#1+0.5mm,#2-0.5mm);
+  \fill[zyellow, opacity=0.75] (0,0) rectangle (#1,#2);
+  \draw[zink, line width=1pt, zwobble] (0,0) rectangle (#1,#2);
+  \draw[zink, line width=0.8pt, zwobble, dashed] (0.7*#1,0) -- (0.7*#1,#2);
+  \fill[zwhite] (0.14*#1,0.4*#2) circle (1.6pt);
+  \draw[zink, line width=0.7pt] (0.14*#1,0.4*#2) circle (1.6pt);
+  \fill[white] (0.85*#1,0.55*#2) circle (1.6pt);
+  \draw[zink, line width=0.7pt] (0.85*#1,0.55*#2) circle (1.6pt);}
+
+\newcommand*\zcampolar[1][6mm]{%  Instamatic-style camera: cobalt + red button
+  \fill[zcobalt, opacity=0.85] ({-0.6*#1+0.5mm},{-0.5mm})
+    rectangle ({0.6*#1+0.5mm},{#1-0.5mm});
+  \path[fill=zwhite, draw=zink, line width=1.1pt, zwobble, rounded corners=0.4mm]
+    (-0.6*#1,0) rectangle (0.6*#1,#1);
+  \fill[zred] (-0.42*#1,0.72*#1) circle (0.07*#1);
+  \draw[zink, line width=0.8pt] (-0.42*#1,0.72*#1) circle (0.07*#1);
+  \pgfmathsetlength{\zfilmx}{0.42*#1}\pgfmathsetlength{\zfilmy}{0.1*#1}%
+  \node[fill=zwhite, draw=zink, line width=0.9pt,
+        circle, inner sep=\zfilmy] at (0,\zfilmx) {};
+  \fill[zcobalt] (0,0.42*#1) circle (0.05*#1);}
+\makeatother

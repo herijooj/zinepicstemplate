@@ -1,0 +1,31 @@
+%% make_guide.tex -- the fold guide of the imposed A4 sheet: the faint
+%% fold lines and the centre slit between columns 2 and 3.
+%% This file is never printed; zine_print_sheet.pdf carries no guides.
+
+\documentclass[12pt]{article}
+\usepackage[a4paper, landscape, margin=0pt]{geometry}
+\usepackage{tikz}
+\usepackage{fontspec}
+
+\definecolor{zink}{HTML}{151515}
+\definecolor{zpaper}{HTML}{FFF8E7}
+
+\begin{document}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]
+  % sheet
+  \fill[zpaper] (0,0) rectangle (297mm,210mm);
+  % ---- fold line: the horizontal midline of the sheet (y = 105 mm)
+  \draw[zink, opacity=0.5, line width=0.35pt] (0mm,105mm) -- (297mm,105mm)
+    node[near end, above, anchor=south, font=\scriptsize\itshape, opacity=0.8]
+    {\textcolor{zink}{fold line (horizontal midline)}};
+  % ---- centre slit: between columns 2 and 3 (x = 148.5 mm)
+  \draw[zink, opacity=0.5, line width=0.35pt] (148.5mm,0mm) -- (148.5mm,210mm)
+    node[near start, right, anchor=west, font=\scriptsize\itshape, opacity=0.8]
+    {\textcolor{zink}{centre slit -- between columns 2 and 3}};
+  % ---- column labels
+  \foreach \x/\l in {37.125mm/c1, 111.375mm/c2, 185.625mm/c3, 259.875mm/c4} {
+    \node[font=\scriptsize\itshape, opacity=0.5] at (\x,205mm) {\textcolor{zink}{\l}};
+  }
+\end{tikzpicture}
+\end{document}

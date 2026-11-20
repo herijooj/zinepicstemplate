@@ -1,0 +1,19 @@
+# Photos live outside git (469MB+). pool.tsv records the pool (lock file).
+photos/
+# Generated deliverables -- rebuild with ./build.sh (see README).
+*.pdf
+main.tex
+# Contact-sheet picking aids -- rebuild with `make contact`.
+contact.pdf
+contact.html
+# LaTeX build junk.
+*.aux
+*.log
+*.out
+*.toc
+# Per-page preview renders -- rebuild with `make preview`.
+preview/
+# Local nix/direnv state.
+.direnv/
+# Scratch.
+t*.pdf

@@ -1,0 +1,155 @@
+%% zine.sty -- an A7 fold-out zine: 8 A7 panels, imposition, stickers.
+%%
+%% One A4 landscape sheet (297 x 210 mm) folds into 8 A7 portrait panels
+%% (74.25 x 105 mm).  make_sheet.tex imposes the pages onto the sheet;
+%% make_guide.pdf draws the faint fold lines and the centre slit.
+%%
+%% Run with xelatex or lualatex: Permanent Marker in fonts/ is the font.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{zine}[2026/11/20 v0.7 A7 fold-out zine]
+
+\RequirePackage{iftex}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{tikz}
+\usetikzlibrary{decorations.pathmorphing, shadows, shapes.geometric}
+\RequirePackage{geometry}
+\RequirePackage{fontspec}
+
+%% ------------------------------------------------------------ palette
+\definecolor{zpaper}{HTML}{FFF8E7}
+\definecolor{zred}{HTML}{E63027}
+\definecolor{zcobalt}{HTML}{2547D0}
+\definecolor{zyellow}{HTML}{FFD21F}
+\definecolor{zgreen}{HTML}{1FA35B}
+\definecolor{zink}{HTML}{151515}
+\definecolor{zwhite}{HTML}{FFFFFF}
+
+%% ------------------------------------------------------------ page size
+%% A7 portrait: 74.25 x 105 mm; four of them make the A4 landscape sheet.
+\geometry{paperwidth=74.25mm, paperheight=105mm, margin=5mm}
+
+%% The paper is the warm paper colour; the doodles add texture on top.
+\pagecolor{zpaper}
+
+%% ------------------------------------------------------------ font
+%% Permanent Marker (file: PermanentMarker-Regular.ttf in fonts/).
+\setmainfont{Permanent Marker}[
+  Path=./fonts/, Extension=.ttf,
+  UprightFont=PermanentMarker-Regular,
+  BoldFont=PermanentMarker-Regular, ItalicFont=PermanentMarker-Regular]
+
+%% ------------------------------------------------------------ wobble
+\tikzset{
+  zwobble/.style={line cap=round, line join=round, decorate,
+    decoration={random steps, segment length=6pt, amplitude=0.9pt}},
+  zwobbly/.style={line cap=round, line join=round, decorate,
+    decoration={random steps, segment length=8pt, amplitude=2.2pt}},
+}
+
+%% ------------------------------------------------------------ helpers
+\newsavebox\zine@img
+\newlength\zine@iw \newlength\zine@ih
+
+%% ------------------------------------------------------------ page doodles
+%% Light doodled texture on every page: yellow dots, cobalt squiggles,
+%% red stars -- in a second palette colour, on the paper colour.
+\newcommand*\zinedoodle{%
+  \begin{scope}
+    % yellow dots (mm units -- must stay on the 74.25 x 105 panel)
+    \foreach \p in {(4mm,6mm),(36mm,8mm),(66mm,4mm),(10mm,30mm),(42mm,32mm),(68mm,28mm),
+                    (6mm,56mm),(38mm,58mm),(60mm,74mm),(24mm,4mm),(58mm,8mm)} {
+      \node[fill=zyellow, opacity=0.35, draw=none, circle, inner sep=0.7pt] at \p {};
+    }
+    % cobalt squiggles
+    \begin{scope}[shift={(14mm,14mm)}]
+      \draw[zcobalt, opacity=0.45, line width=0.6pt, zwobble]
+        (-8pt,0) .. controls (-3pt,2pt) and (3pt,-2pt) .. (8pt,0);
+    \end{scope}
+    \begin{scope}[shift={(52mm,16mm)}]
+      \draw[zcobalt, opacity=0.45, line width=0.6pt, zwobble]
+        (-8pt,0) .. controls (-3pt,2pt) and (3pt,-2pt) .. (8pt,0);
+    \end{scope}
+    \begin{scope}[shift={(20mm,64mm)}]
+      \draw[zcobalt, opacity=0.45, line width=0.6pt, zwobble]
+        (-8pt,0) .. controls (-3pt,2pt) and (3pt,-2pt) .. (8pt,0);
+    \end{scope}
+    \begin{scope}[shift={(62mm,66mm)}]
+      \draw[zcobalt, opacity=0.45, line width=0.6pt, zwobble]
+        (-8pt,0) .. controls (-3pt,2pt) and (3pt,-2pt) .. (8pt,0);
+    \end{scope}
+    % red stars
+    \node[fill=zred, opacity=0.4, draw=none, star, star points=5,
+          inner sep=0.9pt] at (18mm,2mm) {};
+    \node[fill=zred, opacity=0.4, draw=none, star, star points=5,
+          inner sep=0.9pt] at (56mm,12mm) {};
+    \node[fill=zred, opacity=0.4, draw=none, star, star points=5,
+          inner sep=0.9pt] at (30mm,52mm) {};
+    \node[fill=zred, opacity=0.4, draw=none, star, star points=5,
+          inner sep=0.9pt] at (8mm,72mm) {};
+  \end{scope}}
+
+%% ------------------------------------------------------------ anchor
+%% Full-bleed photo on the panel: clipped to the 74.25 x 105 mm panel so
+%% nothing spills onto neighbour pages. #3 is a cover-fit option chosen by
+%% gen_main.awk from the EXIF dimensions (width=74.25mm for portrait,
+%% height=105mm for landscape) -- the long side overflows and is cropped.
+%% #1 file, #2 rotate (deg, keep 0), #3 cover option.
+\newcommand*\zineanchor[3]{%  #1 file, #2 rotate, #3 cover option
+  \begin{scope}
+    \clip (0,0) rectangle (74.25mm,105mm);
+    \begin{scope}[rotate around={#2:(37.125mm,52.5mm)}]
+      \node[anchor=center, inner sep=0pt] at (37.125mm, 52.5mm)
+        {\includegraphics[#3]{#1}};
+    \end{scope}
+  \end{scope}}
+
+%% ------------------------------------------------------------ polaroid
+%% Polaroid: 28 mm wide x 35 mm tall outer frame (fits two columns on a
+%% 74.25 mm panel with margins). White opaque frame, thicker bottom edge
+%% (photo rect (2,7)-(26,33): 24 x 26 photo, 2 mm sides/top, 7 mm bottom),
+%% small drop shadow. #5 is a cover-fit option from EXIF dims
+%% (width=24mm for portrait, height=26mm for landscape); the photo is
+%% clipped to the 24 x 26 rect so faces are never stretched.
+%% #1 file, #2 x, #3 y (frame LOWER-LEFT corner, mm), #4 rotate (deg).
+\newcommand*\zinepolaroid[5]{%  #1 file, #2 x, #3 y, #4 rotate, #5 cover option
+  \begin{scope}[shift={(#2mm,#3mm)}, rotate around={#4:(14mm,17.5mm)}]
+    % drop shadow (behind, offset down-right)
+    \fill[black, opacity=0.25, rounded corners=0.8mm]
+      (1mm,-1mm) rectangle (29mm,34mm);
+    % opaque white frame
+    \fill[zwhite, rounded corners=0.8mm] (0,0) rectangle (28mm,35mm);
+    \draw[zink, line width=0.6pt] (0,0) rectangle (28mm,35mm);
+    % photo, clipped to the inner rect, cover-fit (no distortion)
+    \begin{scope}
+      \clip (2mm,7mm) rectangle (26mm,33mm);
+      \node[anchor=center, inner sep=0pt] at (14mm,20mm)
+        {\includegraphics[#5]{#1}};
+    \end{scope}
+  \end{scope}}
+
+%% ---- \zine@titlefont: Permanent Marker for the cover (fits A7 width).
+\newcommand*\zine@titlefont{\fontsize{28}{34}\selectfont}
+
+%% ------------------------------------------------------------ cover title
+%% Two-line title near the TOP of the cover, strictly centred on the
+%% panel (x = 74.25/2 = 37.125 mm). Two one-line centred nodes 10 mm apart
+%% (explicit leading -- \\ leading inside one node collapses at this size).
+%% Yellow highlight + long hand-drawn double underline, all centred.
+%% #1 line 1, #2 line 2.
+\newcommand*\zinecover[2]{%  #1 line 1, #2 line 2
+  \begin{scope}[shift={(37.125mm, 84mm)}]
+    \node[fill=zyellow, opacity=0.55, inner sep=2pt,
+      minimum width=62mm, minimum height=26mm, anchor=center] (hl) at (0,-3mm) {};
+    \node[align=center, anchor=center, inner sep=0pt]
+      (t1) at (0,2mm) {\zine@titlefont\textcolor{zink}{#1}};
+    \node[align=center, anchor=center, inner sep=0pt]
+      (t2) at (0,-8mm) {\zine@titlefont\textcolor{zink}{#2}};
+    \draw[zink, line width=1.4pt, zwobble, line cap=round]
+      (-30mm,-14mm) .. controls (-10mm,-13.4mm) and (10mm,-14.6mm) .. (30mm,-14mm);
+    \draw[zred, line width=1pt, zwobbly, line cap=round]
+      (-29mm,-15.2mm) .. controls (-8mm,-14.6mm) and (12mm,-15.8mm) .. (29mm,-15.2mm);
+  \end{scope}}
+
+\endinput
