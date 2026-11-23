@@ -1,0 +1,52 @@
+@font-face {
+  font-family: 'Permanent Marker';
+  src: url('fonts/PermanentMarker-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+:root {
+  --paper: #FFF8E7; --ink: #151515; --red: #E63027;
+  --yellow: #FFD21F; --green: #1FA35B; --cobalt: #2547D0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 24px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  background: var(--paper); color: var(--ink);
+}
+header h1 { font-family: 'Permanent Marker', cursive; color: var(--red); margin: 0; font-size: 34px; }
+header p { margin: 4px 0 20px; }
+main { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+.controls {
+  background: #fff; border: 2px solid var(--ink); border-radius: 10px;
+  padding: 16px; width: 320px; display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 4px 4px 0 var(--yellow);
+}
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+input[type=text], input:not([type]) {
+  font: inherit; padding: 7px; border: 2px solid var(--ink); border-radius: 5px;
+  background: var(--paper); width: 100%;
+}
+.upload {
+  border: 2px dashed var(--cobalt); border-radius: 6px; padding: 10px;
+  text-align: center; cursor: pointer; color: var(--cobalt);
+}
+.upload input { font-size: 11px; width: 100%; }
+.hint { font-size: 11px; line-height: 1.45; opacity: 0.8; }
+.buttons { display: flex; flex-direction: column; gap: 7px; }
+button {
+  font: inherit; font-size: 13px; padding: 9px; cursor: pointer;
+  border: 2px solid var(--ink); border-radius: 6px; background: #fff;
+}
+button.primary { background: var(--yellow); font-weight: bold; }
+button:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--ink); }
+button:disabled { opacity: 0.5; cursor: progress; }
+.preview { flex: 1; min-width: 340px; }
+.preview h2 { font-family: 'Permanent Marker', cursive; font-size: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.grid figure { margin: 0; }
+.grid canvas {
+  width: 100%; height: auto; display: block;
+  border: 2px solid var(--ink); box-shadow: 3px 3px 0 rgba(0,0,0,0.15); background: var(--paper);
+}
+.grid figcaption { font-size: 11px; margin-top: 4px; }
+@media (max-width: 700px) { body { padding: 12px; } .controls { width: 100%; } }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Make your own roots e amigos zine</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Make your own zine</h1>
+    <p>One sheet of paper &rarr; eight little pages. Your photos, your title.</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <label>Title, line 1 <input id="title1" value="Root's" maxlength="18"></label>
+      <label>Title, line 2 <input id="title2" value="e Amigos" maxlength="18"></label>
+
+      <label class="upload">Your photos
+        <input id="files" type="file" accept="image/*" multiple>
+      </label>
+      <p class="hint" id="counter">No photos yet — placeholders shown. Add any number; the 42 polaroid slots fill up cyclically.</p>
+
+      <div class="buttons">
+        <button id="print" class="primary">Download print sheet (PDF)</button>
+        <button id="pages">Download pages (PDF)</button>
+        <button id="guide">Download fold guide (PDF)</button>
+      </div>
+      <p class="hint" id="status">Print the sheet single-sided, cut the centre slit, fold into 8 panels.</p>
+    </section>
+
+    <section class="preview">
+      <h2>Preview</h2>
+      <div id="previewGrid" class="grid"></div>
+    </section>
+  </main>
+
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
