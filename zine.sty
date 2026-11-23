@@ -107,9 +107,9 @@
 %% Polaroid: 28 mm wide x 35 mm tall outer frame (fits two columns on a
 %% 74.25 mm panel with margins). White opaque frame, thicker bottom edge
 %% (photo rect (2,7)-(26,33): 24 x 26 photo, 2 mm sides/top, 7 mm bottom),
-%% small drop shadow. #5 is a cover-fit option from EXIF dims
-%% (width=24mm for portrait, height=26mm for landscape); the photo is
-%% clipped to the 24 x 26 rect so faces are never stretched.
+%% small drop shadow. #5 fits the whole photo inside the 24 x 26 rect
+%% (keepaspectratio); it is clipped there so nothing spills onto the
+%% frame. Whole-photo fit means faces are never cropped.
 %% #1 file, #2 x, #3 y (frame LOWER-LEFT corner, mm), #4 rotate (deg).
 \newcommand*\zinepolaroid[5]{%  #1 file, #2 x, #3 y, #4 rotate, #5 cover option
   \begin{scope}[shift={(#2mm,#3mm)}, rotate around={#4:(14mm,17.5mm)}]
@@ -119,10 +119,10 @@
     % opaque white frame
     \fill[zwhite, rounded corners=0.8mm] (0,0) rectangle (28mm,35mm);
     \draw[zink, line width=0.6pt] (0,0) rectangle (28mm,35mm);
-    % photo, clipped to the inner rect, cover-fit (no distortion)
+    % photo, whole-image fit inside the inner rect (no cropping, no distortion)
     \begin{scope}
       \clip (2mm,7mm) rectangle (26mm,33mm);
-      \node[anchor=center, inner sep=0pt] at (14mm,20mm)
+      \node[anchor=center, inner sep=0pt, transform shape] at (14mm,20mm)
         {\includegraphics[#5]{#1}};
     \end{scope}
   \end{scope}}

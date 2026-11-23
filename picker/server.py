@@ -23,9 +23,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # fixed polaroid grid (mm, lower-left corner) -- must match gen_main.awk
 GRID = {
-    "pola1": (5, 64), "pola2": (41, 62), "pola3": (5, 39),
-    "pola4": (41, 37), "pola5": (5, 14), "pola6": (41, 12),
-    "pola7": (23, 48),
+    "pola1": (42, 41), "pola2": (2, 39), "pola3": (2, 2),
+    "pola4": (42, 2), "pola5": (2, 68), "pola6": (24, 21),
+    "pola7": (30, 68),
 }
 SLOTS = ["anchor", "half1", "half2", "pola1", "pola2", "pola3",
          "pola4", "pola5", "pola6", "pola7"]

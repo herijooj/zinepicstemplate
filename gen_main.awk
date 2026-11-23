@@ -2,7 +2,7 @@
 #
 # Two modes (layout.tsv is the single source of truth for placement):
 #   init:  awk -v mode=init -f gen_main.awk pool.tsv > layout.tsv
-#          deterministic auto-spread (LCG seed 20260120) -> placement table.
+#          deterministic auto-spread -> placement table.
 #   tex:   awk -v mode=tex  -f gen_main.awk pool.tsv layout.tsv > main.tex
 #          layout table -> main.tex (no randomness here at all).
 #
@@ -13,27 +13,32 @@
 #   split, pages 1 and 8, unrotated) or pola1..pola7 (pages 2..7).
 #
 # Geometry (polaroid frames 28 x 35 mm, photo 24 x 26):
-#   pola1..pola7 lower-left coords, two columns (x = 5 / 41) x three rows
-#   (y ~ 64/39/14, staggered 2 mm) + 1 centre bridge (23,48).
-#   Row spacing 25 mm on a 35 mm tall frame = ~29% overlap; columns leave
-#   an 8 mm gutter so only corners touch after +-12 deg rotation.
-#   - Cover-fit: awk knows EXIF w/h, so it picks width= (portrait: fill
-#     width, crop top/bottom) or height= (landscape: fill height, crop
-#     sides). No distortion, no measuring in TeX.
+#   pola1..pola7 lower-left coords form a scattered 7-slot grid. Frames may
+#   overlap, but the 24 x 26 photo rects never do: slots are placed and tilted
+#   so the photo rects are disjoint on every page. Keep rotations in sync
+#   with the `rotate` column of layout.tsv.
+#   - Photos fit WHOLE inside the 24 x 26 rect (keepaspectratio): no face is
+#     ever cropped. Most 4:3 shots leave thin white bands top/bottom, which
+#     also gives the stickers somewhere to sit without covering a picture.
 #   - Stickers: 5 per page, varied per page, hand-placed (see emitStickers).
 
 BEGIN {
-  seed = 20260120
   n = 0
   if (mode == "") mode = "tex"
-  # fixed polaroid grid: slot -> lower-left corner (mm)
-  gx["pola1"] = 5;  gy["pola1"] = 64
-  gx["pola2"] = 41; gy["pola2"] = 62
-  gx["pola3"] = 5;  gy["pola3"] = 39
-  gx["pola4"] = 41; gy["pola4"] = 37
-  gx["pola5"] = 5;  gy["pola5"] = 14
-  gx["pola6"] = 41; gy["pola6"] = 12
-  gx["pola7"] = 23; gy["pola7"] = 48
+  # fixed polaroid grid: slot -> lower-left corner (mm).
+  # Positions + rotations are chosen so the 24x26 photo rects never overlap;
+  # white frames may overlap freely. Rotations live in layout.tsv.
+  gx["pola1"] = 42; gy["pola1"] = 41
+  gx["pola2"] = 2;  gy["pola2"] = 39
+  gx["pola3"] = 2;  gy["pola3"] = 2
+  gx["pola4"] = 42; gy["pola4"] = 2
+  gx["pola5"] = 2;  gy["pola5"] = 68
+  gx["pola6"] = 24; gy["pola6"] = 21
+  gx["pola7"] = 30; gy["pola7"] = 68
+  # the matching tilt per slot (must stay in sync with layout.tsv)
+  fixang["pola1"] = -30.0; fixang["pola2"] = 1.8;  fixang["pola3"] = -27.8
+  fixang["pola4"] = -30.0; fixang["pola5"] = 15.2; fixang["pola6"] = -30.0
+  fixang["pola7"] = 25.6
   slotname[0] = "pola1"; slotname[1] = "pola2"; slotname[2] = "pola3"
   slotname[3] = "pola4"; slotname[4] = "pola5"; slotname[5] = "pola6"
   slotname[6] = "pola7"
@@ -52,19 +57,13 @@ mode == "tex" && $1 ~ /^[0-9]+$/ {
   lpage[L] = $1 + 0; lslot[L] = $2; lphoto[L] = $3; lrot[L] = $4 + 0
 }
 
-function rnd() {
-  seed = (seed * 1103515245 + 12345) % 2147483648
-  return int(seed / 65536) / 32768.0
-}
-
 function coverfit_anchor(f,   r) {  # full-bleed on 74.25 x 105 panel
   r = wby[f] / hby[f]
   return (r > 0.7071) ? "height=105mm" : "width=74.25mm"
 }
 
-function coverfit_pola(f,   r) {  # photo rect 24 x 26 (~4:5)
-  r = wby[f] / hby[f]
-  return (r > 0.9231) ? "height=26mm" : "width=24mm"
+function fit_pola(f) {  # fit the WHOLE photo in the 24 x 26 rect
+  return "width=24mm,height=26mm,keepaspectratio"
 }
 
 function coverfit_half(f,   r) {  # half panel 74.25 x 51.75 (aspect 1.435)
@@ -128,46 +127,46 @@ function emitStickers(page) {
     emitSticker("moon",    58, 24, 5, 0, 12, page)
   }
   else if (page == 2) {
-    emitSticker("heart",   10, 96, 5, 0, 12, page)
-    emitSticker("washiR",  48,  9, 20, 6, 25, page)
-    emitSticker("cassette", 34, 32, 6, 0, -8, page)
+    emitSticker("heart",   25, 74, 5, 0, 12, page)
+    emitSticker("washiR",  40,  9, 20, 6, 25, page)
+    emitSticker("cassette", 17, 42, 6, 0, -8, page)
     emitSticker("sparkle", 64, 96, 3, 0, 10, page)
-    emitSticker("arrow",   30,  5, 4, 0, 5, page)
+    emitSticker("arrow",    9,  5, 4, 0, 5, page)
   }
   else if (page == 3) {
-    emitSticker("flower",  10, 96, 6, 0, -12, page)
-    emitSticker("washiB",  48,  9, 20, 6, -18, page)
-    emitSticker("bolt",    36, 30, 6, 0, 8, page)
-    emitSticker("films",   64, 94, 10, 0, 12, page)
-    emitSticker("star",    30,  5, 5, 0, -6, page)
+    emitSticker("flower",  35, 67, 6, 0, -12, page)
+    emitSticker("washiB",  40,  9, 20, 6, -18, page)
+    emitSticker("bolt",    17, 42, 6, 0, 8, page)
+    emitSticker("films",   64, 96, 6, 0, 12, page)
+    emitSticker("star",    34,  5, 5, 0, -6, page)
   }
   else if (page == 4) {
-    emitSticker("smiley",  10, 96, 5, 0, 10, page)
-    emitSticker("washiG",  48,  9, 20, 6, 15, page)
-    emitSticker("moon",    36, 30, 5, 0, -10, page)
+    emitSticker("smiley",  25, 74, 5, 0, 10, page)
+    emitSticker("washiG",  40,  9, 20, 6, 15, page)
+    emitSticker("moon",    18, 38, 5, 0, -10, page)
     emitSticker("camera",  64, 94, 4, 0, -14, page)
-    emitSticker("scribble", 28,  6, 12, 0, 4, page)
+    emitSticker("scribble", 63, 40, 6, 0, 4, page)
   }
   else if (page == 5) {
-    emitSticker("cherry",  10, 96, 5, 0, -10, page)
-    emitSticker("washi",   48,  9, 20, 6, 20, page)
-    emitSticker("sun",     36, 30, 5, 0, 6, page)
-    emitSticker("ticket",  60, 94, 18, 7, 10, page)
-    emitSticker("sparkle", 28,  5, 3, 0, -8, page)
+    emitSticker("cherry",  25, 74, 5, 0, -10, page)
+    emitSticker("washi",   67, 41, 20, 6, 20, page)
+    emitSticker("sun",     36, 15, 5, 0, 6, page)
+    emitSticker("ticket",  64, 97, 18, 7, 10, page)
+    emitSticker("sparkle", 14,  5, 3, 0, -8, page)
   }
   else if (page == 6) {
-    emitSticker("bow",     10, 93, 6, 0, 12, page)
-    emitSticker("washiR",  48,  9, 20, 6, -22, page)
-    emitSticker("star",    36, 30, 5, 0, -8, page)
-    emitSticker("campolar", 64, 90, 6, 0, 10, page)
-    emitSticker("arrow",   28,  5, 4, 0, -5, page)
+    emitSticker("bow",     25, 76, 6, 0, 12, page)
+    emitSticker("washiR",  67, 41, 20, 6, -22, page)
+    emitSticker("star",    36, 15, 5, 0, -8, page)
+    emitSticker("campolar", 36, 67, 6, 0, 10, page)
+    emitSticker("arrow",    9,  5, 4, 0, -5, page)
   }
   else if (page == 7) {
-    emitSticker("flower",  10, 93, 6, 0, 14, page)
-    emitSticker("washiB",  48,  9, 20, 6, 18, page)
-    emitSticker("bolt",    36, 30, 6, 0, -6, page)
+    emitSticker("flower",  35, 67, 6, 0, 14, page)
+    emitSticker("washiB",  40,  9, 20, 6, 18, page)
+    emitSticker("bolt",    18, 42, 6, 0, -6, page)
     emitSticker("heart",   64, 90, 5, 0, -10, page)
-    emitSticker("cassette", 28,  5, 6, 0, 6, page)
+    emitSticker("cassette", 36,  5, 6, 0, 6, page)
   }
   if (page == 8) {  # back cover: stickers live on the EDGES, photo breathes
     emitSticker("smiley",   8, 94, 5, 0, -8, page)
@@ -212,7 +211,7 @@ END {
       else if (i == 4) slot[j] = "pola5"
       else if (i == 5) slot[j] = "pola6"
       else             slot[j] = "pola7"
-      pangle[j] = rnd() * 24 - 12         # random rotation within +-12 degrees
+      pangle[j] = fixang[slot[j]]        # must keep the photo rects disjoint
     }
     # ---- emit layout.tsv (explicit placement; rotate written out)
     print "# layout.tsv -- zine photo placement. Columns: page <TAB> slot <TAB> photo <TAB> rotate(deg)."
@@ -250,12 +249,12 @@ END {
       polpage[npol] = lpage[r]
       cx[npol] = gx[lslot[r]]; cy[npol] = gy[lslot[r]]
       pangle[npol] = lrot[r]
-      polOpt[npol] = coverfit_pola(lphoto[r])
+      polOpt[npol] = fit_pola(lphoto[r])
     }
   }
 
   # ---- emit main.tex
-  print "%% generated by gen_main.awk -- deterministic (seed 20260120)"
+  print "%% generated by gen_main.awk -- deterministic"
   print "%% A7 fold-out zine: 8 pages, reading order 1..8 (1 = cover, 8 = back cover)."
   print ""
   print "\\documentclass[12pt]{article}"
