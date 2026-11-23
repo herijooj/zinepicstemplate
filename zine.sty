@@ -96,13 +96,11 @@
 %% gen_main.awk from the EXIF dimensions (width=74.25mm for portrait,
 %% height=105mm for landscape) -- the long side overflows and is cropped.
 %% #1 file, #2 rotate (deg, keep 0), #3 cover option.
-\newcommand*\zineanchor[3]{%  #1 file, #2 rotate, #3 cover option
+\newcommand*\zineanchor[3]{%  #1 file (unused), #2 rotate (unused), #3 cover opt (unused)
+   %% Full-bleed background: solid paper colour, no photo.
   \begin{scope}
     \clip (0,0) rectangle (74.25mm,105mm);
-    \begin{scope}[rotate around={#2:(37.125mm,52.5mm)}]
-      \node[anchor=center, inner sep=0pt] at (37.125mm, 52.5mm)
-        {\includegraphics[#3]{#1}};
-    \end{scope}
+    \fill[zpaper] (-60mm,-60mm) rectangle (140mm,165mm);
   \end{scope}}
 
 %% ------------------------------------------------------------ polaroid
@@ -138,19 +136,11 @@
 %% (page 8). Cover-fit per half: the half panel is 74.25 x 51.75 mm
 %% (aspect 1.435): wider photos fill height, taller ones fill width.
 %% #1 top photo, #2 top cover-fit opt, #3 bottom photo, #4 bottom opt.
-\newcommand*\zinehalf[4]{%
+\newcommand*\zinehalf[4]{%  #1-#4 files/options (unused)
+   %% Full-bleed background: solid paper colour, no photo.
   \begin{scope}
     \clip (0,0) rectangle (74.25mm,105mm);
-    \begin{scope}
-      \clip (0,53.25mm) rectangle (74.25mm,105mm);
-      \node[anchor=center, inner sep=0pt] at (37.125mm, 79.125mm)
-        {\includegraphics[#2]{#1}};
-    \end{scope}
-    \begin{scope}
-      \clip (0,0) rectangle (74.25mm,51.75mm);
-      \node[anchor=center, inner sep=0pt] at (37.125mm, 25.875mm)
-        {\includegraphics[#4]{#3}};
-    \end{scope}
+    \fill[zpaper] (-60mm,-60mm) rectangle (140mm,165mm);
   \end{scope}}
 
 %% ------------------------------------------------------------ cover title

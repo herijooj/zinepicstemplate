@@ -29,11 +29,11 @@ cmd_sync() {  # scan photos/ -> pool.tsv (sorted lock file)
   echo "== layout: scanning photos/ -> $POOL"
   rm -rf .pool_raw.txt
   # shellcheck disable=SC2012
-  if ! ls photos/*.jpg photos/*.jpeg 2>/dev/null >/dev/null; then
+  if [ -z "$(find photos -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' \) -print -quit)" ]; then
     echo "no jpg/jpeg photos in photos/"; exit 1
   fi
   nix-shell -p exiftool --run \
-    'cd photos && exiftool -Orientation -ImageWidth -ImageHeight *.jpg *.jpeg 2>/dev/null' \
+    'cd photos && shopt -s nullglob && exiftool -Orientation -ImageWidth -ImageHeight *.jpg *.jpeg 2>/dev/null' \
     > .pool_raw.txt || true
   awk -f gen_parse.awk .pool_raw.txt | LC_ALL=C sort > "$POOL"
   rm -f .pool_raw.txt
